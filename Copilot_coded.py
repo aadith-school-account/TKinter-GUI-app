@@ -1,12 +1,127 @@
 import tkinter as tk
 import ttkbootstrap as tb
 import requests
+import threading, time, random
 from ttkbootstrap.widgets import DateEntry
 from datetime import datetime
 from tkinter import messagebox
 from database import setup_db, update_score, get_scores, clear_scores  # Corrected function names
+import pygame, os
+from PIL import Image, ImageTk
 
+##########-MUSIC-###########
+#https://www.youtube.com/watch?v=CQeezCdF4mk 
+#https://www.youtube.com/watch?v=aAkMkVFwAoo - ALL I WANT FOR CHRISTMAS IS YOU
 
+def play_music_elevator():
+    pygame.mixer.init()
+    try:
+        pygame.mixer.music.load("elevator_music.mp3")
+        pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.play(-1)  # loop de loop
+    except pygame.error:
+        print(
+            "Could not play music file. Make sure elevator_music.mp3 exists in the project directory."
+        )
+
+def play_music_christmas():
+    pygame.mixer.init()
+    try:
+        pygame.mixer.music.load("all_i_want_for_christmas_is_you.mp3")
+        pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.play(-1)  # loop de loop
+    except pygame.error:
+        print(
+            "Could not play music file. Make sure elevator_music.mp3 exists in the project directory."
+        )
+
+def sad_trombone():
+    #
+    pygame.mixer.init()
+    skibidi_sound = pygame.mixer.Sound(os.path.join('trombone_sad.mp3'))
+    skibidi_sound.play()
+
+def play_jumpscare():
+    def run_jumpscare():
+        # Create popup window (NOT fullscreen, just nearly fullscreen so we can shake it)
+        jumpscare_window = tk.Toplevel()
+        jumpscare_window.configure(bg="black")
+
+        screen_width = jumpscare_window.winfo_screenwidth()
+        screen_height = jumpscare_window.winfo_screenheight()
+
+        # Size the window just a bit smaller than the screen so it can shake
+        win_width = screen_width - 100
+        win_height = screen_height - 100
+        x = 50
+        y = 50
+        jumpscare_window.geometry(f"{win_width}x{win_height}+{x}+{y}")
+        jumpscare_window.overrideredirect(True)  # Hide title bar
+
+        # Load and show scary image
+        image = Image.open("scary.png")
+        image = image.resize((win_width, win_height))
+        photo = ImageTk.PhotoImage(image)
+        label = tk.Label(jumpscare_window, image=photo)
+        label.image = photo
+        label.pack()
+
+        # Play scream sound
+        pygame.mixer.init()
+        pygame.mixer.music.load("jumpscare.mp3")
+        pygame.mixer.music.play()
+
+        # Give window time to show up
+        jumpscare_window.update()
+        time.sleep(0.2)
+
+        # SHAKING EFFECT!
+        def shake():
+            for _ in range(30):
+                dx = random.randint(-30, 30)
+                dy = random.randint(-30, 30)
+                jumpscare_window.geometry(f"{win_width}x{win_height}+{x+dx}+{y+dy}")
+                jumpscare_window.update()
+                time.sleep(0.03)
+            # Reset to original position
+            jumpscare_window.geometry(f"{win_width}x{win_height}+{x}+{y}")
+
+        shake()
+
+        # Hold for dramatic effect
+        time.sleep(1)
+        jumpscare_window.destroy()
+
+    threading.Thread(target=run_jumpscare).start()
+
+"""
+music = input("Would you like to play music? (Y/N):")
+music = music.upper()
+
+if music.upper() == 'Y':
+
+    print("Do you want to listen to... ")
+    print("1: Christmas Music")
+    print('2: Elevator Music')
+    choice = int(input("Please only enter 1 or 2! "))
+
+    if choice == 2:
+        play_music_elevator()
+
+        music_thread = threading.Thread(target=play_music_elevator)
+        music_thread.daemon = True  # Thread will stop when main program exits
+        music_thread.start()
+
+    elif choice == 1:
+        play_music_christmas()
+
+        music_thread = threading.Thread(target=play_music_christmas)
+        music_thread.daemon = True  # Thread will stop when main program exits
+        music_thread.start()
+else:
+    print("your loss :(")
+    sad_trombone()
+"""
 
 
 setup_db()
@@ -247,6 +362,40 @@ def highlight_winner(cells):
 
 leaderboard_button = tb.Button(tic_tac_toe_frame, text="Leaderboard", bootstyle="info-outline", command=show_scores)
 leaderboard_button.grid(row=4, column=0, columnspan=3, pady=10)
+
+jumpscare_btn = tk.Button(root, text="Jumpscare!", command=play_jumpscare)
+jumpscare_btn.pack(pady=10)
+
+
+
+def choose_music():
+    def play_choice():
+        choice = var.get()
+        if choice == "elevator":
+            music_thread = threading.Thread(target=play_music_elevator, daemon=True)
+            music_thread.start()
+        elif choice == "christmas":
+            music_thread = threading.Thread(target=play_music_christmas, daemon=True)
+            music_thread.start()
+        music_win.destroy()
+
+    music_win = tb.Toplevel()
+    music_win.title("🎵 Choose Music")
+    music_win.geometry("300x180")
+    music_win.resizable(False, False)
+    music_win.grab_set()
+    music_win.attributes("-topmost", True)
+
+    tk.Label(music_win, text="Do you want to listen to music?", font=("Segoe UI", 12)).pack(pady=10)
+    var = tk.StringVar(value="elevator")
+
+    tb.Radiobutton(music_win, text="🎄 Christmas Music", variable=var, value="christmas", bootstyle="info").pack()
+    tb.Radiobutton(music_win, text="🛗 Elevator Music", variable=var, value="elevator", bootstyle="secondary").pack()
+
+    tb.Button(music_win, text="Play", bootstyle="success", command=play_choice).pack(pady=10)
+    tb.Button(music_win, text="No Thanks", bootstyle="danger-outline", command=lambda: [sad_trombone(), music_win.destroy()]).pack()
+
+choose_music()
 
 
 root.mainloop()
