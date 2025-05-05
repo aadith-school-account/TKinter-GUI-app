@@ -44,3 +44,13 @@ def get_scores():
     print("DEBUG - Retrieved Scores:", scores)  # ✅ This will print scores to help you debug!
     return scores
 
+
+def clear_scores():
+    conn = sqlite3.connect("scores.db")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM scores")
+    conn.commit()
+    conn.close()
+    print("DEBUG: All scores cleared")
+
+
