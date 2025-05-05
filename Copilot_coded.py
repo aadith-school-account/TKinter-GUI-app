@@ -4,6 +4,72 @@ import requests
 from ttkbootstrap.widgets import DateEntry
 from datetime import datetime
 from tkinter import messagebox
+from database import setup_db, update_score, get_scores, clear_scores  # Corrected function names
+
+
+
+
+setup_db()
+# Modify `highlight_winner()` to save scores
+def highlight_winner(cells):
+    global current_player
+    for row, col in cells:
+        board[row][col].config(bootstyle="success")
+
+    # Save score in database
+    print(f"DEBUG: Calling update_score() for {current_player}")
+    update_score(current_player)
+    
+    messagebox.showinfo("Tic Tac Toe", f"{current_player} wins!")
+
+
+def clear_leaderboard(window):
+    if messagebox.askyesno("Confirm", "Are you sure you want to clear the leaderboard?"):
+        clear_scores()
+        messagebox.showinfo("Leaderboard", "Leaderboard cleared.")
+        window.destroy()
+
+
+
+def show_scores():
+    scores = get_scores()
+
+    if not scores:
+        messagebox.showinfo("Leaderboard", "No games played yet.")
+        return
+
+    leaderboard_window = tb.Toplevel()
+    leaderboard_window.title("🏆 Leaderboard")
+    leaderboard_window.geometry("300x300")
+    leaderboard_window.resizable(False, False)
+    leaderboard_window.attributes("-topmost", True)
+
+    title = tb.Label(leaderboard_window, text="Tic Tac Toe Leaderboard", font=("Segoe UI", 16, "bold"), bootstyle="info")
+    title.pack(pady=10)
+
+    list_frame = tb.Frame(leaderboard_window)
+    list_frame.pack(fill="both", expand=True, padx=20)
+
+    for i, (player, wins) in enumerate(scores, start=1):
+        row = f"{i}. {player}: {wins} win{'s' if wins != 1 else ''}"
+        label = tb.Label(list_frame, text=row, font=("Segoe UI", 12), anchor="w")
+        label.pack(fill="x", pady=2)
+
+    # Buttons Frame
+    button_frame = tb.Frame(leaderboard_window)
+    button_frame.pack(pady=10)
+
+    close_btn = tb.Button(button_frame, text="Close", bootstyle="secondary", command=leaderboard_window.destroy)
+    close_btn.grid(row=0, column=0, padx=5)
+
+    clear_btn = tb.Button(
+        button_frame,
+        text="Clear Leaderboard",
+        bootstyle="danger-outline",
+        command=lambda: clear_leaderboard(leaderboard_window)
+    )
+    clear_btn.grid(row=0, column=1, padx=5)
+
 
 # Function to fetch real-time weather data
 def get_weather():
@@ -170,9 +236,17 @@ for row in range(3):
 
 reset_button = tb.Button(tic_tac_toe_frame, text="Restart Game", bootstyle="danger", command=reset_game)
 reset_button.grid(row=3, column=0, columnspan=3, pady=10)  # Center reset button below board
-# Update Winner Highlight Function
+# Final winner highlight function — combines correct visuals + DB saving
 def highlight_winner(cells):
+    global current_player
     for row, col in cells:
-        board[row][col].config(bootstyle="success")  # Uses ttkbootstrap styling instead of `bg`
-    messagebox.showinfo("Tic Tac Toe", f"{current_player} wins!")
+        board[row][col].config(bootstyle="success")  # Consistent styling
+    update_score(current_player)  # ✅ Save to DB
+    messagebox.showinfo("Tic Tac Toe", f"{current_player} wins!")  # ✅ Show winner
+
+
+leaderboard_button = tb.Button(tic_tac_toe_frame, text="Leaderboard", bootstyle="info-outline", command=show_scores)
+leaderboard_button.grid(row=4, column=0, columnspan=3, pady=10)
+
+
 root.mainloop()
