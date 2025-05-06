@@ -1,7 +1,7 @@
 import tkinter as tk
 import ttkbootstrap as tb
 import requests
-import threading, time, random
+import threading, time, random, randfacts
 from ttkbootstrap.widgets import DateEntry
 from datetime import datetime
 from tkinter import messagebox
@@ -94,36 +94,37 @@ def play_jumpscare():
 
     threading.Thread(target=run_jumpscare).start()
 
-"""
-music = input("Would you like to play music? (Y/N):")
-music = music.upper()
-
-if music.upper() == 'Y':
-
-    print("Do you want to listen to... ")
-    print("1: Christmas Music")
-    print('2: Elevator Music')
-    choice = int(input("Please only enter 1 or 2! "))
-
-    if choice == 2:
-        play_music_elevator()
-
-        music_thread = threading.Thread(target=play_music_elevator)
-        music_thread.daemon = True  # Thread will stop when main program exits
-        music_thread.start()
-
-    elif choice == 1:
-        play_music_christmas()
-
-        music_thread = threading.Thread(target=play_music_christmas)
-        music_thread.daemon = True  # Thread will stop when main program exits
-        music_thread.start()
-else:
-    print("your loss :(")
-    sad_trombone()
-"""
 
 
+def choose_music():
+    def play_choice():
+        choice = var.get()
+        if choice == "elevator":
+            music_thread = threading.Thread(target=play_music_elevator, daemon=True)
+            music_thread.start()
+        elif choice == "christmas":
+            music_thread = threading.Thread(target=play_music_christmas, daemon=True)
+            music_thread.start()
+        music_win.destroy()
+
+    music_win = tb.Toplevel()
+    music_win.title("🎵 Choose Music")
+    music_win.geometry("300x180")
+    music_win.resizable(False, False)
+    music_win.grab_set()
+    music_win.attributes("-topmost", True)
+
+    tk.Label(music_win, text="Do you want to listen to music?", font=("Segoe UI", 12)).pack(pady=10)
+    var = tk.StringVar(value="elevator")
+
+    tb.Radiobutton(music_win, text="🎄 Christmas Music", variable=var, value="christmas", bootstyle="info").pack()
+    tb.Radiobutton(music_win, text="🛗 Elevator Music", variable=var, value="elevator", bootstyle="secondary").pack()
+
+    tb.Button(music_win, text="Play", bootstyle="success", command=play_choice).pack(pady=10)
+    tb.Button(music_win, text="No Thanks", bootstyle="danger-outline", command=lambda: [sad_trombone(), music_win.destroy()]).pack()
+
+
+##########=SETUP FUNCTIONS-##########
 setup_db()
 # Modify `highlight_winner()` to save scores
 def highlight_winner(cells):
@@ -238,7 +239,9 @@ def calculate_age():
     except Exception:
         messagebox.showerror("Error", "Please enter a valid date in YYYY-MM-DD format.")
 
-# Tic Tac Toe Game
+
+##########-TIC TAC TOE-##########
+
 def reset_game():
     global board, current_player
     current_player = "X"
@@ -287,11 +290,14 @@ def on_click(row, col):
         else:
             current_player = "O" if current_player == "X" else "X"
 
-# Initialize main window
+
+##########-INIT WINDOWS-##########
 style = tb.Style(theme="minty")
 root = style.master
 root.title("Utility App")
 root.geometry("450x400")
+root.configure(highlightbackground="black", highlightthickness=2)
+
 
 # Create notebook for tabs
 notebook = tb.Notebook(root)
@@ -335,7 +341,7 @@ temp_output = tk.StringVar()
 temp_label = tk.Label(weather_frame, textvariable=temp_output, font=("Elephant", 16, "bold"), fg="red")
 temp_label.pack(pady=5)
 
-# Tic Tac Toe Tab
+##########-TIC TAC TOE CONT-###########
 tic_tac_toe_frame = tb.Frame(notebook)
 notebook.add(tic_tac_toe_frame, text="🎮 Tic Tac Toe")
 
@@ -367,33 +373,18 @@ jumpscare_btn = tk.Button(root, text="Jumpscare!", command=play_jumpscare)
 jumpscare_btn.pack(pady=10)
 
 
+fact_frame = tb.Frame(notebook)
+notebook.add(fact_frame, text="🧠 Fun Facts")
 
-def choose_music():
-    def play_choice():
-        choice = var.get()
-        if choice == "elevator":
-            music_thread = threading.Thread(target=play_music_elevator, daemon=True)
-            music_thread.start()
-        elif choice == "christmas":
-            music_thread = threading.Thread(target=play_music_christmas, daemon=True)
-            music_thread.start()
-        music_win.destroy()
+fact_label = tk.Label(fact_frame, text="Click the button to get a fun fact!", wraplength=400, justify="center", font=("Comic Sans MS", 12))
+fact_label.pack(pady=20)
 
-    music_win = tb.Toplevel()
-    music_win.title("🎵 Choose Music")
-    music_win.geometry("300x180")
-    music_win.resizable(False, False)
-    music_win.grab_set()
-    music_win.attributes("-topmost", True)
+def generate_fact():
+    fact = randfacts.get_fact()
+    fact_label.config(text=fact)
 
-    tk.Label(music_win, text="Do you want to listen to music?", font=("Segoe UI", 12)).pack(pady=10)
-    var = tk.StringVar(value="elevator")
-
-    tb.Radiobutton(music_win, text="🎄 Christmas Music", variable=var, value="christmas", bootstyle="info").pack()
-    tb.Radiobutton(music_win, text="🛗 Elevator Music", variable=var, value="elevator", bootstyle="secondary").pack()
-
-    tb.Button(music_win, text="Play", bootstyle="success", command=play_choice).pack(pady=10)
-    tb.Button(music_win, text="No Thanks", bootstyle="danger-outline", command=lambda: [sad_trombone(), music_win.destroy()]).pack()
+fact_button = tb.Button(fact_frame, text="Generate Fact", bootstyle="primary", command=generate_fact)
+fact_button.pack(pady=10)
 
 choose_music()
 
